@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:5000/api
+
+### Create a new Todo
+POST {{baseUrl}}/todos
+Content-Type: application/json
+
+{
+  "title": "Buy groceries",
+  "description": "Milk, eggs, bread"
+}
+
+### Create another Todo
+POST {{baseUrl}}/todos
+Content-Type: application/json
+
+{
+  "title": "Finish project",
+  "description": "Complete the .NET Todo API"
+}
+
+### Create Todo with validation error (title too short)
+POST {{baseUrl}}/todos
+Content-Type: application/json
+
+{
+  "title": "AB"
+}
+
+### Get all Todos (no pagination)
+GET {{baseUrl}}/todos
+
+### Get all Todos with pagination
+GET {{baseUrl}}/todos?page=1&page_size=5
+
+### Get Todo by ID (replace with actual ID)
+GET {{baseUrl}}/todos/b7e34ca1-4427-4e21-9564-e0450429a1a5
+
+### Update Todo (replace ID with actual ID)
+PUT {{baseUrl}}/todos/b7e34ca1-4427-4e21-9564-e0450429a1a5
+Content-Type: application/json
+
+{
+  "title": "Buy groceries (updated)",
+  "description": "Milk, eggs, bread, cheese",
+  "is_completed": true
+}
+
+### Delete Todo (replace ID with actual ID)
+DELETE {{baseUrl}}/todos/b7e34ca1-4427-4e21-9564-e0450429a1a5   
