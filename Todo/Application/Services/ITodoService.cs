@@ -4,10 +4,9 @@ namespace Todo.Application.Services;
 
 public interface ITodoService
 {
-    Task<IEnumerable<TodoResponseDto>> GetAllAsync();
-    Task<(IEnumerable<TodoResponseDto> Items, int TotalCount)> GetPaginatedAsync(int page, int pageSize);
-    Task<TodoResponseDto> GetByIdAsync(Guid id);
-    Task<TodoResponseDto> CreateAsync(TodoCreateDto dto);
-    Task<TodoResponseDto> UpdateAsync(Guid id, TodoUpdateDto dto);
-    Task DeleteAsync(Guid id);
+    Task<(IEnumerable<TodoResponseDto> Items, int Page, int PageSize, int TotalCount)> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<TodoResponseDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<TodoResponseDto> CreateAsync(TodoCreateDto dto, CancellationToken cancellationToken = default);
+    Task<TodoResponseDto> UpdateAsync(Guid id, TodoUpdateDto dto, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

@@ -3,20 +3,8 @@ using Todo.Api.Models;
 
 namespace Todo.Api.Middleware;
 
-public class ResponseTransformMiddleware
+public class ResponseTransformMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-    private readonly JsonSerializerOptions _jsonOptions;
-
-    public ResponseTransformMiddleware(RequestDelegate next)
-    {
-        _next = next;
-        _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        };
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
         var originalBodyStream = context.Response.Body;
@@ -26,7 +14,7 @@ public class ResponseTransformMiddleware
 
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch
         {
@@ -58,7 +46,7 @@ public class ResponseTransformMiddleware
             }
 
             var wrappedResponse = new ApiResponse<object>(data, successMessage);
-            var wrappedJson = JsonSerializer.Serialize(wrappedResponse, _jsonOptions);
+            var wrappedJson = JsonSerializer.Serialize(wrappedResponse, JsonOptions.SnakeCase);
 
             context.Response.Body = originalBodyStream;
             context.Response.ContentType = "application/json";

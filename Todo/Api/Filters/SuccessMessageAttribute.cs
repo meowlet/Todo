@@ -1,12 +1,7 @@
 namespace Todo.Api.Filters;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class SuccessMessageAttribute : Attribute
+public class SuccessMessageAttribute(string message) : Attribute
 {
-    public string Message { get; }
-
-    public SuccessMessageAttribute(string message)
-    {
-        Message = message;
-    }
+    public string Message { get; } = message;
 }

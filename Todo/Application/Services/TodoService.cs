@@ -6,84 +6,70 @@ using Todo.Infrastructure.Data;
 
 namespace Todo.Application.Services;
 
-public class TodoService : ITodoService
+public class TodoService(AppDbContext context) : ITodoService
 {
-    private readonly AppDbContext _context;
+    private const int MaxPageSize = 100;
 
-    public TodoService(AppDbContext context)
+    public async Task<(IEnumerable<TodoResponseDto> Items, int Page, int PageSize, int TotalCount)> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        _context = context;
-    }
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
-    public async Task<IEnumerable<TodoResponseDto>> GetAllAsync()
-    {
-        var todos = await _context.Todos
-            .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync();
-        return todos.Select(MapToDto);
-    }
-
-    public async Task<(IEnumerable<TodoResponseDto> Items, int TotalCount)> GetPaginatedAsync(int page, int pageSize)
-    {
-        var query = _context.Todos.OrderByDescending(t => t.CreatedAt);
-        var totalCount = await query.CountAsync();
+        var query = context.Todos.OrderByDescending(t => t.CreatedAt);
+        var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
-        return (items.Select(MapToDto), totalCount);
+            .ToListAsync(cancellationToken);
+
+        return (items.Select(MapToDto), page, pageSize, totalCount);
     }
 
-    public async Task<TodoResponseDto> GetByIdAsync(Guid id)
+    public async Task<TodoResponseDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var todo = await _context.Todos.FindAsync(id);
-        if (todo == null)
-        {
-            throw AppException.NotFound("Todo", id);
-        }
-        return MapToDto(todo);
+        var todo = await context.Todos.FindAsync([id], cancellationToken);
+        return todo == null ? throw new AppException(ErrorCode.ResourceNotFound, $"Todo with id '{id}' not found") : MapToDto(todo);
     }
 
-    public async Task<TodoResponseDto> CreateAsync(TodoCreateDto dto)
+    public async Task<TodoResponseDto> CreateAsync(TodoCreateDto dto, CancellationToken cancellationToken = default)
     {
         var todo = new TodoItem
         {
-            Id = Guid.NewGuid(),
             Title = dto.Title,
             Description = dto.Description,
             IsCompleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
-        _context.Todos.Add(todo);
-        await _context.SaveChangesAsync();
+        context.Todos.Add(todo);
+        await context.SaveChangesAsync(cancellationToken);
         return MapToDto(todo);
     }
 
-    public async Task<TodoResponseDto> UpdateAsync(Guid id, TodoUpdateDto dto)
+    public async Task<TodoResponseDto> UpdateAsync(Guid id, TodoUpdateDto dto, CancellationToken cancellationToken = default)
     {
-        var todo = await _context.Todos.FindAsync(id);
+        var todo = await context.Todos.FindAsync([id], cancellationToken);
         if (todo == null)
         {
-            throw AppException.NotFound("Todo", id);
+            throw new AppException(ErrorCode.ResourceNotFound, $"Todo with id '{id}' not found");
         }
         todo.Title = dto.Title;
         todo.Description = dto.Description;
         todo.IsCompleted = dto.IsCompleted;
         todo.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
         return MapToDto(todo);
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var todo = await _context.Todos.FindAsync(id);
+        var todo = await context.Todos.FindAsync([id], cancellationToken);
         if (todo == null)
         {
-            throw AppException.NotFound("Todo", id);
+            throw new AppException(ErrorCode.ResourceNotFound, $"Todo with id '{id}' not found");
         }
-        _context.Todos.Remove(todo);
-        await _context.SaveChangesAsync();
+        context.Todos.Remove(todo);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private static TodoResponseDto MapToDto(TodoItem todo)

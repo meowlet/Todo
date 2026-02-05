@@ -8,62 +8,52 @@ namespace Todo.Api.Controllers;
 
 [ApiController]
 [Route("api/todos")]
-public class TodosController : ControllerBase
+public class TodosController(ITodoService todoService) : ControllerBase
 {
-    private readonly ITodoService _todoService;
-
-    public TodosController(ITodoService todoService)
-    {
-        _todoService = todoService;
-    }
-
     [HttpGet]
     [SuccessMessage("Todos retrieved successfully")]
-    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery(Name = "page_size")] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery(Name = "page_size")] int pageSize = 20, CancellationToken cancellationToken = default)
     {
-        if (page.HasValue && pageSize.HasValue)
+        var (items, actualPage, actualPageSize, totalCount) = await todoService.GetAllAsync(page, pageSize, cancellationToken);
+
+        var result = new PaginatedResponse<TodoResponseDto>
         {
-            var (items, totalCount) = await _todoService.GetPaginatedAsync(page.Value, pageSize.Value);
-            var paginatedResult = new PaginatedResponse<TodoResponseDto>
-            {
-                Items = items,
-                Pagination = PaginationMeta.Create(page.Value, pageSize.Value, totalCount)
-            };
-            return Ok(paginatedResult);
-        }
-        var todos = await _todoService.GetAllAsync();
-        return Ok(todos);
+            Items = items,
+            Pagination = PaginationMeta.Create(actualPage, actualPageSize, totalCount)
+        };
+
+        return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
     [SuccessMessage("Todo retrieved successfully")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var todo = await _todoService.GetByIdAsync(id);
+        var todo = await todoService.GetByIdAsync(id, cancellationToken);
         return Ok(todo);
     }
 
     [HttpPost]
     [SuccessMessage("Todo created successfully")]
-    public async Task<IActionResult> Create([FromBody] TodoCreateDto dto)
+    public async Task<IActionResult> Create([FromBody] TodoCreateDto dto, CancellationToken cancellationToken)
     {
-        var todo = await _todoService.CreateAsync(dto);
-        return StatusCode(201, todo);
+        var todo = await todoService.CreateAsync(dto, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = todo.Id }, todo);
     }
 
-    [HttpPut("{id:guid}")]
+    [HttpPatch("{id:guid}")]
     [SuccessMessage("Todo updated successfully")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] TodoUpdateDto dto)
+    public async Task<IActionResult> Update(Guid id, [FromBody] TodoUpdateDto dto, CancellationToken cancellationToken)
     {
-        var todo = await _todoService.UpdateAsync(id, dto);
+        var todo = await todoService.UpdateAsync(id, dto, cancellationToken);
         return Ok(todo);
     }
 
     [HttpDelete("{id:guid}")]
     [SuccessMessage("Todo deleted successfully")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await _todoService.DeleteAsync(id);
+        await todoService.DeleteAsync(id, cancellationToken);
         return Ok();
     }
 }

@@ -8,16 +8,11 @@ public class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<GlobalExceptionMiddleware> _logger;
-    private readonly JsonSerializerOptions _jsonOptions;
 
     public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
     {
         _next = next;
         _logger = logger;
-        _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        };
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -53,7 +48,7 @@ public class GlobalExceptionMiddleware
         context.Response.StatusCode = statusCode;
 
         var response = new ErrorResponse(exception.CustomMessage, exception.ErrorCode.Code, exception.Details);
-        var json = JsonSerializer.Serialize(response, _jsonOptions);
+        var json = JsonSerializer.Serialize(response, JsonOptions.SnakeCase);
         
         await context.Response.WriteAsync(json);
     }
@@ -70,19 +65,19 @@ public class GlobalExceptionMiddleware
             ErrorCode.InternalError.Code,
             null
         );
-        var json = JsonSerializer.Serialize(response, _jsonOptions);
+        var json = JsonSerializer.Serialize(response, JsonOptions.SnakeCase);
         
         await context.Response.WriteAsync(json);
     }
 
     private static int MapErrorCodeToHttpStatus(ErrorCode errorCode)
     {
-        return errorCode.Code switch
+        return errorCode switch
         {
-            "VALIDATION_ERROR" => 400,
-            "RESOURCE_NOT_FOUND" => 404,
-            "RESOURCE_ALREADY_EXISTS" => 409,
-            "INTERNAL_ERROR" => 500,
+            var e when e == ErrorCode.ValidationError => 400,
+            var e when e == ErrorCode.ResourceNotFound => 404,
+            var e when e == ErrorCode.ResourceAlreadyExists => 409,
+            var e when e == ErrorCode.InternalError => 500,
             _ => 500
         };
     }

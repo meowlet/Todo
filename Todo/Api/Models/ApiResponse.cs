@@ -14,14 +14,6 @@ public class ApiResponse<T>
     }
 }
 
-public class ApiResponse : ApiResponse<object>
-{
-    public ApiResponse() : base() { }
-    
-    public ApiResponse(object? data, string message = "Operation completed successfully") 
-        : base(data, message) { }
-}
-
 public class PaginatedResponse<T>
 {
     public IEnumerable<T> Items { get; set; } = [];

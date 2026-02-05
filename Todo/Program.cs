@@ -31,7 +31,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
                 e => e.Value?.Errors.First().ErrorMessage ?? "Invalid value"
             );
 
-        throw AppException.ValidationFailed(errors);
+        throw new AppException(ErrorCode.ValidationError, "Validation failed", errors);
     };
 });
 
