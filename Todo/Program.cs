@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure JSON serialization with snake_case
 builder.Services.AddControllers(options =>
 {
-    options.Filters.Add<SuccessMessageFilter>();
+    options.Filters.Add<ResponseWrapperFilter>();
 })
 .AddJsonOptions(options =>
 {
@@ -49,7 +49,6 @@ var app = builder.Build();
 
 // Configure middleware pipeline
 app.UseMiddleware<GlobalExceptionMiddleware>();
-app.UseMiddleware<ResponseTransformMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
